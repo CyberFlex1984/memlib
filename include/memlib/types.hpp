@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <expected>
+#include <vector>
 
 namespace memlib {
     using u8 = std::uint8_t;
@@ -18,6 +19,9 @@ namespace memlib {
     using vtable = void**;
     using buffer = void*;
     using size_t = std::size_t;
+
+    using byte_t = std::uint8_t;
+    using byte_array = std::vector<byte_t>;
 
     enum class ErrorCode {
         InvalidAddress,

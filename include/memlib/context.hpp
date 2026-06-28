@@ -44,6 +44,7 @@ namespace memlib {
         inline std::string get_name() const {
             return pImpl ? pImpl->get_name() : "LOSTED";
         }
+        inline Memory at(address_t addr);
 
         static Result<Context> internal();
     };
