@@ -25,6 +25,7 @@ namespace memlib {
         ProcessNotFound,
         ReadFailed,
         WriteFailed,
+        NotInitialized,
 
         Custom
     };
@@ -47,6 +48,7 @@ namespace memlib {
             case ErrorCode::AccessDenied: return "Access Denied";
             case ErrorCode::ReadFailed: return "Read Failed";
             case ErrorCode::WriteFailed: return "Write Failed";
+            case ErrorCode::NotInitialized: return "Not Initialized";
 
             default: return "Custom";
         }
@@ -64,7 +66,7 @@ namespace memlib {
         virtual Result<void> write_bytes(memlib::address_t addr, memlib::buffer buffer, memlib::size_t size) = 0;
 
         virtual bool is_attached() const = 0;
-        virtual memlib::u32 get_pid() const = 0;
+        virtual Result<memlib::u32> get_pid() const = 0;
         virtual std::string get_name() const = 0;
     };
 }

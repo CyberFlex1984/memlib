@@ -28,7 +28,7 @@ namespace memlib {
             return true;
         }
 
-        memlib::u32 get_pid() const override {
+        Result<memlib::u32> get_pid() const override {
             #if defined(_WIN32)
                 return GetCurrentProcessId();
             #elif defined(__linux__)
