@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(BUILD_EXAMPLES "Build example programs" ON)
+
 file(GLOB_RECURSE SOURCES_CORE CONFIGURE_DEPENDS
     "src/*.cpp"
     "src/*.c"
@@ -19,3 +21,8 @@ target_include_directories(memlib
         src/
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+if(BUILD_EXAMPLES)
+    add_executable(example_internal examples/example_internal.cpp)
+    target_link_libraries(example_internal PRIVATE memlib)
+endif()
