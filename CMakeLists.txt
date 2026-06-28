@@ -6,12 +6,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 file(GLOB_RECURSE SOURCES_CORE CONFIGURE_DEPENDS
-    "src/core/*.cpp"
-    "src/core/*.c"
+    "src/*.cpp"
+    "src/*.c"
 )
 
 add_library(memlib STATIC ${SOURCES_CORE})
 
-target_include_directories(memlib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+target_include_directories(memlib 
+    PUBLIC
+        include/
+    PRIVATE
+        src/
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
