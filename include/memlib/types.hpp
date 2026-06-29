@@ -30,6 +30,7 @@ namespace memlib {
         ReadFailed,
         WriteFailed,
         NotInitialized,
+        NotAttached,
 
         Custom
     };
@@ -53,6 +54,7 @@ namespace memlib {
             case ErrorCode::ReadFailed: return "Read Failed";
             case ErrorCode::WriteFailed: return "Write Failed";
             case ErrorCode::NotInitialized: return "Not Initialized";
+            case ErrorCode::NotAttached: return "Not Attached";
 
             default: return "Custom";
         }

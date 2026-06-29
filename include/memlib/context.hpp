@@ -103,6 +103,9 @@ namespace memlib {
         }
 
         static Result<Context> internal();
+
+        static Result<Context> external(memlib::u32 pid);
+        static Result<Context> external(const std::string& name);
     };
 
     
