@@ -25,4 +25,7 @@ target_include_directories(memlib
 if(BUILD_EXAMPLES)
     add_executable(example_internal examples/example_internal.cpp)
     target_link_libraries(example_internal PRIVATE memlib)
+
+    add_executable(example_external examples/example_external.cpp)
+    target_link_libraries(example_external PRIVATE memlib)
 endif()
