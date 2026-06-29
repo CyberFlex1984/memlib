@@ -61,18 +61,6 @@ namespace memlib {
     inline std::string to_string(const Error& err) {
         return err.message.empty() ? to_string(err.code) : err.message;
     }
-
-    class IBackend {
-    public:
-        virtual ~IBackend() = default;
-
-        virtual Result<void> read_bytes(memlib::address_t addr, memlib::buffer buffer, memlib::size_t size) = 0;
-        virtual Result<void> write_bytes(memlib::address_t addr, memlib::buffer buffer, memlib::size_t size) = 0;
-
-        virtual bool is_attached() const = 0;
-        virtual Result<memlib::u32> get_pid() const = 0;
-        virtual std::string get_name() const = 0;
-    };
 }
 
 #define TRY(expr) \

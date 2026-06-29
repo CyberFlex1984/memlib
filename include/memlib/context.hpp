@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "memlib/ibackend.hpp"
 #include "types.hpp"
 
 namespace memlib {
