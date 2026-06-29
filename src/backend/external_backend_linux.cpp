@@ -113,7 +113,10 @@ namespace memlib {
         return scan_region(*this, pattern, start, end);
     }
     bool ExternalLinuxBackend::is_attached() const {
-        return attached;
+        if(!attached) return false;
+
+        std::string path = "/proc/" + std::to_string(pid);
+        return (attached = fs::exists(path));
     }
     Result<memlib::u32> ExternalLinuxBackend::get_pid() const {
         if(!attached){

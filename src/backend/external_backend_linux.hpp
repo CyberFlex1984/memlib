@@ -11,7 +11,7 @@
 namespace memlib {
     class ExternalLinuxBackend : public IBackend {
         memlib::u32 pid = 0;
-        bool attached = false;
+        mutable bool attached = false;
         std::string name;
 
         ExternalLinuxBackend() = default;
