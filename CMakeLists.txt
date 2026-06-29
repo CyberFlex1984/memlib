@@ -28,4 +28,5 @@ if(BUILD_EXAMPLES)
 
     add_executable(example_external examples/example_external.cpp)
     target_link_libraries(example_external PRIVATE memlib)
+    
 endif()

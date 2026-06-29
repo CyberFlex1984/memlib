@@ -1,4 +1,4 @@
-#include <print>
+#include <iostream>
 
 #include <memlib/memlib.hpp>
 
@@ -36,21 +36,21 @@ int main(){
 
             if(auto _res = mem.read<vec3>()){
                 auto vec = std::move(_res).value();
-                std::println("x: {}, y: {}, z: {}", vec.x, vec.y, vec.z);
+                std::cout << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << std::endl;
             }
 
-            std::println("Address: 0x{:x}", mem.address());
+            std::cout << "Address: " << (void*)mem.address() << std::endl;
 
             mem.add_inplace(offsetof(Player, health));
 
             if(auto _res = mem.read<int>()){
                 auto health = std::move(_res).value();
-                std::println("health: {}", health);
+                std::cout << "health: " << health << std::endl;
             }
             if(mem.write<int>(67)){
-                std::println("health: {}", p.health);
+                std::cout << "health: " << p.health << std::endl;
             }
-            std::println("Address: 0x{:x}", mem.address());
+            std::cout << "Address: " << (void*)mem.address() << std::endl;
         }
     }
 }

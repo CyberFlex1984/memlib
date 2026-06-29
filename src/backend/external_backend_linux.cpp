@@ -1,3 +1,5 @@
+#if defined(__linux__)
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -11,9 +13,6 @@
 
 #include "scan_utils.hpp"
 #include "memlib/types.hpp"
-
-#if defined(__linux__)
-
 
 #include "external_backend_linux.hpp"
 

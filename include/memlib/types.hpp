@@ -31,6 +31,7 @@ namespace memlib {
         WriteFailed,
         NotInitialized,
         NotAttached,
+        BackendError,
 
         Custom
     };
@@ -55,6 +56,7 @@ namespace memlib {
             case ErrorCode::WriteFailed: return "Write Failed";
             case ErrorCode::NotInitialized: return "Not Initialized";
             case ErrorCode::NotAttached: return "Not Attached";
+            case ErrorCode::BackendError: return "Backend Error";
 
             default: return "Custom";
         }

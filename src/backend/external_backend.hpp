@@ -5,7 +5,7 @@
 #include "external_backend_windows.hpp"
 
 namespace memlib {
-    
+    using ExternalBackend = ExternalWindowsBackend;
 }
 
 #elif defined(__linux__)
