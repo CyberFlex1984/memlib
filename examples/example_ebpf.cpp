@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <iostream>
 
 #include <memlib/memlib.hpp>
@@ -64,6 +65,14 @@ int main(){
             }
             std::cout << "Address: " << (void*)mem.address() << std::endl;
 
+            mem.sub_inplace(offsetof(Player, health));
+
+            vec3 new_coords{5, 12, 13};
+
+            if(mem.write<vec3>(new_coords)){
+                std::cout << "x: " << p.pos.x << " y: " << p.pos.y << " z: " << p.pos.z << std::endl;
+            }
+            std::cout << "Address: " << (void*)mem.address() << std::endl;
             // if u'll get modules here it can crash, I don't know why
         }
         else{
