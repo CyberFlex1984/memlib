@@ -31,6 +31,9 @@ namespace memlib {
         bool is_attached() const override;
         Result<memlib::u32> get_pid() const override;
         std::string get_name() const override;
+
+        Result<std::vector<ModuleInfo>> get_modules() override;
+        Result<ModuleInfo> get_module(const std::string& name) override;
     private:
         bool process_exists() const;
     };

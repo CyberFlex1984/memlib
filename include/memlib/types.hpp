@@ -23,6 +23,41 @@ namespace memlib {
     using byte_t = std::uint8_t;
     using byte_array = std::vector<byte_t>;
 
+    struct ModuleInfo {
+        std::string name;
+        address_t base;
+        size_t size;
+
+        ModuleInfo() = default;
+
+        ModuleInfo(const std::string& n, address_t b, size_t s)
+            : name(n), base(b), size(s) {}
+
+        ModuleInfo(const ModuleInfo& other)
+            : name(other.name), base(other.base), size(other.size) {}
+
+        ModuleInfo(ModuleInfo&& other) noexcept
+            : name(std::move(other.name)), base(other.base), size(other.size) {}
+
+        ModuleInfo& operator=(const ModuleInfo& other) {
+            if (this != &other) {
+                name = other.name;
+                base = other.base;
+                size = other.size;
+            }
+            return *this;
+        }
+
+        ModuleInfo& operator=(ModuleInfo&& other) noexcept {
+            if (this != &other) {
+                name = std::move(other.name);
+                base = other.base;
+                size = other.size;
+            }
+            return *this;
+        }
+    };
+
     enum class ErrorCode {
         InvalidAddress,
         AccessDenied,
@@ -32,6 +67,8 @@ namespace memlib {
         NotInitialized,
         NotAttached,
         BackendError,
+        NotSupported,
+        Timeout,
 
         Custom
     };
@@ -57,6 +94,8 @@ namespace memlib {
             case ErrorCode::NotInitialized: return "Not Initialized";
             case ErrorCode::NotAttached: return "Not Attached";
             case ErrorCode::BackendError: return "Backend Error";
+            case ErrorCode::NotSupported: return "Not Supported";
+            case ErrorCode::Timeout: return "Timeout";
 
             default: return "Custom";
         }

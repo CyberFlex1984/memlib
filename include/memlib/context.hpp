@@ -40,6 +40,12 @@ namespace memlib {
         inline std::string get_name() const {
             return pImpl ? pImpl->get_name() : "LOSTED";
         }
+        inline auto get_modules() const {
+            return pImpl ? pImpl->get_modules() : std::unexpected(Error(ErrorCode::NotInitialized));
+        }
+        inline auto get_module(const std::string& name) const {
+            return pImpl ? pImpl->get_module(name) : std::unexpected(Error(ErrorCode::NotInitialized));
+        }
 
         class Memory {
             Context& ctx;
@@ -106,6 +112,9 @@ namespace memlib {
 
         static Result<Context> external(memlib::u32 pid);
         static Result<Context> external(const std::string& name);
+
+        static Result<Context> ebpf(memlib::u32 pid);
+        static Result<Context> ebpf(const std::string& name);
     };
 
     

@@ -46,5 +46,15 @@ int main(){
             std::cout << "health: " << p.health << std::endl;
         }
         std::cout << "Address: " << (void*)mem.address() << std::endl;
+
+        std::cout << std::endl;
+
+        if(auto modules_res = ctx.get_modules()){
+            auto modules = std::move(modules_res).value();
+            std::cout << modules.size() << " modules!" << std::endl;
+            for(const auto& module : modules) {
+                std::cout << module.name << ": " << (void*)module.base << " size: " << module.size << std::endl;
+            }
+        }
     }
 }

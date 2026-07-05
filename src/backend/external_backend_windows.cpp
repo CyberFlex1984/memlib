@@ -4,10 +4,13 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 
-#include "scan_utils.hpp"
+#include <strings.h>
+
 #include "memlib/types.hpp"
 
 #include "external_backend_windows.hpp"
+
+#include "scan_utils.hpp"
 
 namespace memlib {
     static Result<memlib::u32> find_pid_by_name(const std::string& name) {
@@ -15,13 +18,13 @@ namespace memlib {
         if(snapshot == INVALID_HANDLE_VALUE) {
             return std::unexpected(Error(ErrorCode::BackendError, "Failed to create process snapshot"));
         }
-        
+    
         PROCESSENTRY32 entry;
         entry.dwSize = sizeof(entry);
 
         if(Process32First(snapshot, &entry)){
             do {
-                if(_stricmp(name.c_str(), entry.szExeFile) == 0){
+                if(strcasecmp(name.c_str(), entry.szExeFile) == 0){
                     CloseHandle(snapshot);
                     return entry.th32ProcessID;
                 }
@@ -138,6 +141,54 @@ namespace memlib {
         }
 
         return scan_region(*this, pattern, start, end);
+    }
+
+    Result<std::vector<ModuleInfo>> ExternalWindowsBackend::get_modules() {
+        std::vector<ModuleInfo> modules;
+
+        HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
+        if (snapshot == INVALID_HANDLE_VALUE) {
+            return std::unexpected(Error(ErrorCode::BackendError,
+                "CreateToolhelp32Snapshot failed"));
+        }
+
+        MODULEENTRY32 entry;
+        entry.dwSize = sizeof(entry);
+
+        if (Module32First(snapshot, &entry)) {
+            do {
+                std::string mod_name(entry.szModule);
+                if (!mod_name.empty()) {
+                    ModuleInfo info{mod_name, (address_t)entry.modBaseAddr, entry.modBaseSize};
+                    modules.push_back(info);
+                }
+            } while (Module32Next(snapshot, &entry));
+        }
+
+        CloseHandle(snapshot);
+        return modules;
+    }
+    Result<ModuleInfo> ExternalWindowsBackend::get_module(const std::string& name) {
+        auto modules = get_modules();
+        if (!modules) {
+            return std::unexpected(modules.error());
+        }
+
+        std::string name_lower = name;
+        std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
+
+        for (const auto& mod : modules.value()) {
+            std::string mod_name_lower = mod.name;
+            std::transform(mod_name_lower.begin(), mod_name_lower.end(),
+                            mod_name_lower.begin(), ::tolower);
+
+            if (mod_name_lower == name_lower) {
+                return mod;
+            }
+        }
+
+        return std::unexpected(Error(ErrorCode::ProcessNotFound,
+            "Module not found: " + name));
     }
 }
 

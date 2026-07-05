@@ -16,5 +16,8 @@ namespace memlib {
         virtual bool is_attached() const = 0;
         virtual Result<memlib::u32> get_pid() const = 0;
         virtual std::string get_name() const = 0;
+
+        virtual Result<std::vector<ModuleInfo>> get_modules() = 0;
+        virtual Result<ModuleInfo> get_module(const std::string&) = 0;
     };
 }
