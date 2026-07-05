@@ -93,8 +93,11 @@ namespace memlib {
                 return *this;
             }
             inline Result<Memory> deref() const {
-                auto ptr = TRY(read<address_t>());
-                return Memory(ctx, ptr);
+                auto res = read<address_t>();
+                if (!res) {
+                    return std::unexpected(res.error());
+                }
+                return Memory(ctx, std::move(res).value());
             }
             inline address_t address() const {
                 return addr;

@@ -4,7 +4,6 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 
-#include <strings.h>
 
 #include "memlib/types.hpp"
 
@@ -24,7 +23,7 @@ namespace memlib {
 
         if(Process32First(snapshot, &entry)){
             do {
-                if(strcasecmp(name.c_str(), entry.szExeFile) == 0){
+                if(_stricmp(name.c_str(), entry.szExeFile) == 0){
                     CloseHandle(snapshot);
                     return entry.th32ProcessID;
                 }
@@ -63,7 +62,11 @@ namespace memlib {
     }
 
     Result<std::unique_ptr<ExternalWindowsBackend>> ExternalWindowsBackend::create(const std::string& name) {
-        auto pid = TRY(find_pid_by_name(name));
+        auto _res = find_pid_by_name(name);
+        if (!_res) {
+            return std::unexpected(_res.error());
+        }
+        memlib::u32 pid = std::move(_res).value();
 
         auto hProcess = open_process(pid);
         if(!hProcess){

@@ -12,11 +12,21 @@ namespace memlib {
         return Context(std::move(impl));
     }
     Result<Context> Context::external(memlib::u32 pid){
-        auto impl = TRY(memlib::ExternalBackend::create(pid));
+        //auto impl = TRY(memlib::ExternalBackend::create(pid));
+        auto _res = memlib::ExternalBackend::create(pid);
+        if (!_res) {
+            return std::unexpected(_res.error());
+        }
+        auto impl = std::move(_res).value();
         return Context(std::move(impl));
     }
     Result<Context> Context::external(const std::string& name){
-        auto impl = TRY(memlib::ExternalBackend::create(name));
+        //auto impl = TRY(memlib::ExternalBackend::create(name));
+        auto _res = memlib::ExternalBackend::create(name);
+        if (!_res) {
+            return std::unexpected(_res.error());
+        }
+        auto impl = std::move(_res).value();
         return Context(std::move(impl));
     }
     Result<Context> Context::ebpf(memlib::u32 pid){

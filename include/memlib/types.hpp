@@ -107,10 +107,8 @@ namespace memlib {
 }
 
 #define TRY(expr) \
-    ({ \
-        auto _result = (expr); \
-        if(!_result) { \
-            return std::unexpected(_result.error()); \
-        } \
-        std::move(_result).value(); \
-    })
+    auto _result = (expr); \
+    if (!_result) { \
+        return std::unexpected(_result.error()); \
+    } \
+    std::move(_result).value()
