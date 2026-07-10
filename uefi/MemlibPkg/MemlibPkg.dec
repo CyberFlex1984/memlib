@@ -1,5 +1,5 @@
 [Defines]
   DEC_SPECIFICATION              = 0x00010005
   PACKAGE_NAME                   = MemlibPkg
-  PACKAGE_GUID                   = 12345678-1234-1234-1234-123456789ABC
+  PACKAGE_GUID                   = 4317DF5D-8D31-43D7-A09F-DD5D6DD44733
   PACKAGE_VERSION                = 0.1

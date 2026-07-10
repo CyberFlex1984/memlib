@@ -1,16 +1,22 @@
 [Defines]
   INF_VERSION                    = 0x00010006
   BASE_NAME                      = MemlibDxe
-  FILE_GUID                      = 12345678-1234-1234-1234-123456789ABC
+  FILE_GUID                      = 4317DF5D-8D31-43D7-A09F-DD5D6DD44733
   MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 0.1
   ENTRY_POINT                    = MemlibDxeEntryPoint
 
 [Sources]
   MemlibDxe.c
+  SetServicePointer.c
+  Hooks.c
 
 [Packages]
   MdePkg/MdePkg.dec
+
+[Guids]
+  gEfiEventExitBootServicesGuid
+  gEfiEventVirtualAddressChangeGuid
 
 [LibraryClasses]
   UefiDriverEntryPoint
