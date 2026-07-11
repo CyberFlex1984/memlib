@@ -1,5 +1,5 @@
 #pragma once
-#if defined(__linux__)
+#if defined(__linux__) && defined(MEMLIB_EBPF)
 
 #include <memlib/ibackend.hpp>
 #include <memlib/types.hpp>

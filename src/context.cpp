@@ -12,7 +12,6 @@ namespace memlib {
         return Context(std::move(impl));
     }
     Result<Context> Context::external(memlib::u32 pid){
-        //auto impl = TRY(memlib::ExternalBackend::create(pid));
         auto _res = memlib::ExternalBackend::create(pid);
         if (!_res) {
             return std::unexpected(_res.error());
@@ -21,7 +20,6 @@ namespace memlib {
         return Context(std::move(impl));
     }
     Result<Context> Context::external(const std::string& name){
-        //auto impl = TRY(memlib::ExternalBackend::create(name));
         auto _res = memlib::ExternalBackend::create(name);
         if (!_res) {
             return std::unexpected(_res.error());
@@ -30,19 +28,29 @@ namespace memlib {
         return Context(std::move(impl));
     }
     Result<Context> Context::ebpf(memlib::u32 pid){
-        #if defined (__linux__)
-        auto impl = TRY(memlib::EBPFBackend::create(pid));
-        return Context(std::move(impl));
+        #if defined(MEMLIB_EBPF)
+        auto impl = memlib::EBPFBackend::create(pid);
+        if (!impl) {
+            return std::unexpected(impl.error());
+        }
+        return Context(std::move(impl).value());
         #else
-        return std::unexpected(Error(ErrorCode::NotSupported, "This feature supported only in LINUX"));
+        (void)pid;
+        return std::unexpected(Error(ErrorCode::NotSupported,
+            "The eBPF backend is not enabled for this build"));
         #endif
     }
     Result<Context> Context::ebpf(const std::string& name){
-        #if defined (__linux__)
-        auto impl = TRY(memlib::EBPFBackend::create(name));
-        return Context(std::move(impl));
+        #if defined(MEMLIB_EBPF)
+        auto impl = memlib::EBPFBackend::create(name);
+        if (!impl) {
+            return std::unexpected(impl.error());
+        }
+        return Context(std::move(impl).value());
         #else
-        return std::unexpected(Error(ErrorCode::NotSupported, "This feature supported only in LINUX"));
+        (void)name;
+        return std::unexpected(Error(ErrorCode::NotSupported,
+            "The eBPF backend is not enabled for this build"));
         #endif
     }
 }

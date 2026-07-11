@@ -3,6 +3,8 @@
 
 #if defined (__linux__)
 
+#include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <filesystem>
 
@@ -47,7 +49,9 @@ namespace memlib {
             if(!entry.is_directory()) continue;
 
             std::string pid_str = entry.path().filename().string();
-            if(!std::all_of(pid_str.begin(), pid_str.end(), ::isdigit)) continue;
+            if(!std::all_of(pid_str.begin(), pid_str.end(), [](unsigned char character) {
+                return std::isdigit(character) != 0;
+            })) continue;
 
             std::ifstream comm_file(entry.path() / "comm");
             if(!comm_file) continue;

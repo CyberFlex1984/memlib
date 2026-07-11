@@ -44,7 +44,10 @@ namespace memlib {
         size_t size = end - start;
         byte_array buffer(size);
 
-        TRY(backend.read_bytes(start, buffer.data(), size));
+        auto read_result = backend.read_bytes(start, buffer.data(), size);
+        if (!read_result) {
+            return std::unexpected(read_result.error());
+        }
 
         return scan_buffer(pattern, buffer, start);
     }
