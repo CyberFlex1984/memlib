@@ -9,7 +9,6 @@
 [Sources]
   MemlibDxe.c
   SetServicePointer.c
-  Hooks.c
 
 [Packages]
   MdePkg/MdePkg.dec
