@@ -2,10 +2,13 @@
 
 #include "memlib/ibackend.hpp"
 #include "memlib/pattern.hpp"
+#include <algorithm>
 #include <cstring>
 #include <iterator>
 #include <memlib/types.hpp>
 #include <ranges>
+#include <sstream>
+#include <string_view>
 #include <vector>
 
 #if defined(_WIN32)
@@ -15,6 +18,10 @@
     #include <unistd.h>
     #include <fstream>
     #include <filesystem>
+#elif defined(__APPLE__)
+    #include <mach-o/dyld.h>
+    #include <mach-o/loader.h>
+    #include <unistd.h>
 #endif
 
 
@@ -64,6 +71,11 @@ namespace memlib {
                 return GetCurrentProcessId();
             #elif defined(__linux__)
                 return static_cast<memlib::u32>(getpid());
+            #elif defined(__APPLE__)
+                return static_cast<memlib::u32>(getpid());
+            #else
+                return std::unexpected(Error(ErrorCode::NotSupported,
+                    "InternalBackend is not supported on this platform"));
             #endif
         }
         std::string get_name() const override {
@@ -184,6 +196,104 @@ namespace memlib {
 
             return std::unexpected(Error(ErrorCode::ProcessNotFound,
                 "Module not found: " + name));
+        }
+#elif defined(__APPLE__)
+        Result<std::vector<ModuleInfo>> get_modules() override {
+            std::vector<ModuleInfo> modules;
+            const uint32_t image_count = _dyld_image_count();
+            modules.reserve(image_count);
+
+            for (uint32_t image_index = 0; image_index < image_count; ++image_index) {
+                const mach_header* header = _dyld_get_image_header(image_index);
+                const char* image_path = _dyld_get_image_name(image_index);
+                if (header == nullptr || image_path == nullptr) {
+                    continue;
+                }
+
+                const uint8_t* command_ptr = reinterpret_cast<const uint8_t*>(header);
+                if (header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64) {
+                    command_ptr += sizeof(mach_header_64);
+                } else if (header->magic == MH_MAGIC || header->magic == MH_CIGAM) {
+                    command_ptr += sizeof(mach_header);
+                } else {
+                    continue;
+                }
+
+                size_t mapped_size = 0;
+                for (uint32_t command_index = 0; command_index < header->ncmds; ++command_index) {
+                    const auto* command = reinterpret_cast<const load_command*>(command_ptr);
+                    if (command->cmdsize < sizeof(load_command)) {
+                        break;
+                    }
+
+                    uint64_t vmsize = 0;
+                    vm_prot_t initial_protection = VM_PROT_NONE;
+                    std::string_view segment_name;
+                    if (command->cmd == LC_SEGMENT_64) {
+                        const auto* segment = reinterpret_cast<const segment_command_64*>(command);
+                        vmsize = segment->vmsize;
+                        initial_protection = segment->initprot;
+                        segment_name = std::string_view(segment->segname,
+                            strnlen(segment->segname, sizeof(segment->segname)));
+                    } else if (command->cmd == LC_SEGMENT) {
+                        const auto* segment = reinterpret_cast<const segment_command*>(command);
+                        vmsize = segment->vmsize;
+                        initial_protection = segment->initprot;
+                        segment_name = std::string_view(segment->segname,
+                            strnlen(segment->segname, sizeof(segment->segname)));
+                    }
+
+                    if (vmsize != 0 && initial_protection != VM_PROT_NONE &&
+                        segment_name != SEG_LINKEDIT) {
+                        mapped_size += static_cast<size_t>(vmsize);
+                    }
+
+                    command_ptr += command->cmdsize;
+                }
+
+                if (mapped_size == 0) {
+                    continue;
+                }
+
+                std::string path(image_path);
+                const auto slash = path.find_last_of('/');
+                const std::string module_name = slash == std::string::npos
+                    ? path
+                    : path.substr(slash + 1);
+                modules.emplace_back(
+                    module_name,
+                    reinterpret_cast<address_t>(header),
+                    mapped_size
+                );
+            }
+
+            return modules;
+        }
+
+        Result<ModuleInfo> get_module(const std::string& name) override {
+            auto modules = get_modules();
+            if (!modules) {
+                return std::unexpected(modules.error());
+            }
+
+            for (const auto& module : modules.value()) {
+                if (module.name == name) {
+                    return module;
+                }
+            }
+
+            return std::unexpected(Error(ErrorCode::ProcessNotFound,
+                "Module not found: " + name));
+        }
+#else
+        Result<std::vector<ModuleInfo>> get_modules() override {
+            return std::unexpected(Error(ErrorCode::NotSupported,
+                "Module enumeration is not supported on this platform"));
+        }
+
+        Result<ModuleInfo> get_module(const std::string&) override {
+            return std::unexpected(Error(ErrorCode::NotSupported,
+                "Module enumeration is not supported on this platform"));
         }
 #endif
 

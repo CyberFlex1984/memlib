@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <expected>
+#include <utility>
 #include <vector>
 
 namespace memlib {
@@ -105,21 +106,3 @@ namespace memlib {
         return err.message.empty() ? to_string(err.code) : err.message;
     }
 }
-
-#if defined(_MSC_VER)
-    #define TRY(expr) \
-        auto _result = (expr); \
-        if (!_result) { \
-            return std::unexpected(_result.error()); \
-        } \
-        std::move(_result).value()
-#else
-    #define TRY(expr) \
-        ({ \
-            auto _result = (expr); \
-            if (!_result) { \
-                return std::unexpected(_result.error()); \
-            } \
-            std::move(_result).value(); \
-        })
-#endif

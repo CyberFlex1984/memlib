@@ -58,7 +58,10 @@ namespace memlib {
             template<typename T>
             inline Result<T> read() const {
                 T value;
-                TRY(ctx.read_bytes(addr, &value, sizeof(T)));
+                auto read_result = ctx.read_bytes(addr, &value, sizeof(T));
+                if (!read_result) {
+                    return std::unexpected(read_result.error());
+                }
                 return value;
             }
 
@@ -69,7 +72,10 @@ namespace memlib {
 
             inline Result<byte_array> read_bytes(size_t size) const {
                 byte_array buffer(size);
-                TRY(ctx.read_bytes(addr, buffer.data(), size));
+                auto read_result = ctx.read_bytes(addr, buffer.data(), size);
+                if (!read_result) {
+                    return std::unexpected(read_result.error());
+                }
                 return buffer;
             }
 

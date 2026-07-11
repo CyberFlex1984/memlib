@@ -23,18 +23,22 @@ VOID* SetServicePointer(
 
     EFI_TPL OldTpl = gBS->RaiseTPL(TPL_HIGH_LEVEL);
 
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
     UINTN Cr0 = AsmReadCr0();
     BOOLEAN WpSet = (Cr0 & CR0_WP) != 0;
     if (WpSet) {
         AsmWriteCr0(Cr0 & ~CR0_WP);
     }
+#endif
 
     VOID* OriginalFunction = *ServiceTableFunction;
 
     if (OriginalFunction == NewFunction) {
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
         if (WpSet) {
             AsmWriteCr0(Cr0);
         }
+#endif
         gBS->RestoreTPL(OldTpl);
         return OriginalFunction;
     }
@@ -44,9 +48,11 @@ VOID* SetServicePointer(
     ServiceTableHeader->CRC32 = 0;
     gBS->CalculateCrc32((UINT8*)ServiceTableHeader, ServiceTableHeader->HeaderSize, &ServiceTableHeader->CRC32);
 
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
     if (WpSet) {
         AsmWriteCr0(Cr0);
     }
+#endif
 
     gBS->RestoreTPL(OldTpl);
 

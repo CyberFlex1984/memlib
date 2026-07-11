@@ -2,10 +2,12 @@
 
 #include <map>
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <expected>
 #include <string>
+#include <sstream>
 
 #include <fstream>
 #include <filesystem>
@@ -35,8 +37,11 @@ namespace memlib {
         return std::make_unique<ExternalLinuxBackend>(pid, "");
     }
     Result<std::unique_ptr<ExternalLinuxBackend>> ExternalLinuxBackend::create(const std::string& name) {
-        auto pid = TRY(find_pid_by_name(name));
-        return std::make_unique<ExternalLinuxBackend>(pid, name);
+        auto pid = find_pid_by_name(name);
+        if (!pid) {
+            return std::unexpected(pid.error());
+        }
+        return std::make_unique<ExternalLinuxBackend>(pid.value(), name);
     }
     Result<void> ExternalLinuxBackend::read_bytes(address_t addr, buffer buffer, size_t size){
         if(!attached){

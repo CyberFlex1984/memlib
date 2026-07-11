@@ -1,13 +1,13 @@
-cmake_minimum_required(VERSION 4.2.3)
+cmake_minimum_required(VERSION 3.20)
 project(memlib LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_EBPF_BACKEND "Build eBPF backend" ON)
+option(BUILD_EBPF_BACKEND "Build the Linux-only eBPF backend" OFF)
 option(BUILD_EXAMPLES "Build example programs" ON)
-option(BUILD_UEFI_DRIVER "Build UEFI driver" ON)
+option(BUILD_UEFI_DRIVER "Build the experimental UEFI driver" OFF)
 
 
 file(GLOB_RECURSE SOURCES_CORE CONFIGURE_DEPENDS
@@ -16,6 +16,10 @@ file(GLOB_RECURSE SOURCES_CORE CONFIGURE_DEPENDS
 )
 
 add_library(memlib STATIC ${SOURCES_CORE})
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_definitions(memlib PRIVATE _GNU_SOURCE)
+endif()
 
 if(BUILD_UEFI_DRIVER)
     if(EXISTS ${CMAKE_SOURCE_DIR}/third-party/edk2/ReadMe.rst)
@@ -44,7 +48,7 @@ if(BUILD_UEFI_DRIVER)
 endif()
 
 
-if(BUILD_EBPF_BACKEND AND CMAKE_HOST_LINUX)
+if(BUILD_EBPF_BACKEND AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBBPF REQUIRED libbpf)
 
@@ -58,6 +62,10 @@ if(BUILD_EBPF_BACKEND AND CMAKE_HOST_LINUX)
         target_compile_definitions(memlib PRIVATE MEMLIB_EBPF)
         add_dependencies(memlib ebpf_copy)
     endif()
+endif()
+
+if(BUILD_EBPF_BACKEND AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(WARNING "BUILD_EBPF_BACKEND is only available when targeting Linux; skipping it")
 endif()
 
 
@@ -77,7 +85,7 @@ if(BUILD_EXAMPLES)
     add_executable(example_external examples/example_external.cpp)
     target_link_libraries(example_external PRIVATE memlib)
     
-    if(BUILD_EBPF_BACKEND AND CMAKE_HOST_LINUX)
+    if(BUILD_EBPF_BACKEND AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_executable(example_ebpf examples/example_ebpf.cpp)
         target_link_libraries(example_ebpf PRIVATE memlib)
     endif()

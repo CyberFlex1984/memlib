@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 import os
-import sys
 import subprocess
 import shutil
 import argparse
 import platform
+import shlex
 from pathlib import Path
 
 def detect_os():
     return platform.system().lower()
 
-def detect_toolchain():
+def detect_toolchain(arch):
     os_name = detect_os()
     if os_name == 'windows':
         return 'VS2022'
     elif os_name == 'linux':
-        return 'GCC'
+        return 'GCC5'
     elif os_name == 'darwin':
-        return 'XCODE5'
-    return 'GCC'
+        return 'CLANGPDB' if arch == 'AARCH64' else 'XCODE5'
+    return 'GCC5'
 
 def detect_arch():
     machine = platform.machine().lower()
@@ -26,12 +26,38 @@ def detect_arch():
         return 'X64'
     elif machine in ('aarch64', 'arm64'):
         return 'AARCH64'
-    return 'X64'
+    raise RuntimeError(f'Unsupported host architecture: {machine}')
+
+def build_environment(os_name, toolchain, arch):
+    env = os.environ.copy()
+
+    if toolchain == 'CLANGPDB':
+        required_tools = ('clang', 'lld-link', 'llvm-lib', 'llvm-rc')
+        tool_paths = {tool: shutil.which(tool) for tool in required_tools}
+        missing = [tool for tool, path in tool_paths.items() if path is None]
+        if missing:
+            raise RuntimeError(
+                'A complete LLVM toolchain is required for AARCH64 UEFI on macOS; '
+                f'missing: {", ".join(missing)}'
+            )
+        tool_dirs = {str(Path(path).resolve().parent) for path in tool_paths.values()}
+        if len(tool_dirs) != 1:
+            raise RuntimeError(
+                'clang, lld-link, llvm-lib, and llvm-rc must come from the same LLVM installation'
+            )
+        env['CLANG_BIN'] = tool_dirs.pop() + os.sep
+
+    if os_name == 'linux' and toolchain == 'GCC5':
+        prefix_variable = f'GCC5_{arch}_PREFIX'
+        env.setdefault(prefix_variable, '')
+
+    return env
 
 def build_uefi_driver(edk2_path, project_path, output_dir):
     os_name = detect_os()
-    toolchain = detect_toolchain()
     arch = detect_arch()
+    toolchain = detect_toolchain(arch)
+    env = build_environment(os_name, toolchain, arch)
 
     print(f"OS: {os_name}")
     print(f"Toolchain: {toolchain}")
@@ -49,37 +75,40 @@ def build_uefi_driver(edk2_path, project_path, output_dir):
         shutil.rmtree(uefi_dst)
     shutil.copytree(uefi_src, uefi_dst)
 
-    if os_name == 'linux' or os_name == 'darwin':
-        shell_cmd = f"""
-cd {edk2_path}
+    try:
+        if os_name == 'linux' or os_name == 'darwin':
+            shell_cmd = f"""
+cd {shlex.quote(str(edk2_path))}
 source edksetup.sh
 build -a {arch} -t {toolchain} -p MemlibPkg/MemlibPkg.dsc -m MemlibPkg/MemlibDxe/MemlibDxe.inf -b DEBUG
 """
-        print("Running EDK2 build...")
-        subprocess.run(shell_cmd, shell=True, executable='/bin/bash', check=True)
+            print("Running EDK2 build...")
+            subprocess.run(
+                shell_cmd,
+                shell=True,
+                executable='/bin/bash',
+                check=True,
+                env=env
+            )
 
-    elif os_name == 'windows':
-        shell_cmd = f"""
-cd {edk2_path}
+        elif os_name == 'windows':
+            shell_cmd = f"""
+cd /d {edk2_path}
 call edksetup.bat
 build -a {arch} -t {toolchain} -p MemlibPkg/MemlibPkg.dsc -m MemlibPkg/MemlibDxe/MemlibDxe.inf -b DEBUG
 """
-        subprocess.run(shell_cmd, shell=True, check=True)
+            subprocess.run(shell_cmd, shell=True, check=True, env=env)
 
+        efi_path = edk2_path / 'Build' / 'MemlibPkg' / f'DEBUG_{toolchain}' / arch / 'MemlibDxe.efi'
+        if not efi_path.exists():
+            raise FileNotFoundError(f'.efi not found at {efi_path}')
 
-    efi_path = edk2_path / 'Build' / 'MemlibPkg' / f'DEBUG_{toolchain}' / arch / 'MemlibDxe.efi'
-    if not efi_path.exists():
-        efi_path = edk2_path / 'Build' / 'MemlibPkg' / f'DEBUG_{toolchain}' / 'X64' / 'MemlibDxe.efi'
-
-    if efi_path.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy(efi_path, output_dir / 'MemlibDxe.efi')
         print(f"UEFI driver copied to: {output_dir / 'MemlibDxe.efi'}")
-        
-        shutil.rmtree(uefi_dst)
-    else:
-        print(f"ERROR: .efi not found at {efi_path}")
-        sys.exit(1)
+    finally:
+        if uefi_dst.exists():
+            shutil.rmtree(uefi_dst)
 
 def main():
     parser = argparse.ArgumentParser()

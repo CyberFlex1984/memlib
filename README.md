@@ -6,18 +6,18 @@ memlib is a cross-platform C++23 library for reading, writing, and scanning proc
 
 | Backend | Platform | Description |
 |---------|----------|-------------|
-| Internal | Windows / Linux | Direct memory access from within the current process |
-| External | Windows / Linux | Cross-process memory access via OS API |
-| eBPF | Linux | Kernel-level memory access without kernel modules (Linux 5.8+) |
-| UEFI (TODO) | Any UEFI | Runtime driver with memory access via firmware |
+| Internal | Windows / macOS / GNU/Linux | Direct memory access from within the current process |
+| External | Windows / macOS / GNU/Linux | Cross-process memory access via OS API |
+| eBPF | GNU/Linux | Kernel-level memory access without kernel modules (Linux 5.8+) |
+| UEFI (experimental) | X64 / AARCH64 | Runtime driver with memory access via firmware |
 
 Additional features:
 
 * Pattern Scanner — byte pattern search with wildcards (??)
-* Module Enumeration — get loaded modules (Windows/Linux)
+* Module Enumeration — get loaded modules (Windows/macOS/GNU/Linux)
 * Address Arithmetic — pointer dereferencing, offsets, array access
 * Zero-cost Abstractions — modern C++ with std::expected
-* Cross-platform — Windows, Linux, UEFI (TODO)
+* Cross-platform — Windows, macOS, GNU/Linux
 * No exceptions — all errors via Result<T>
 * Header-only Optional — easy integration
 
@@ -28,7 +28,7 @@ Additional features:
 ```
 mkdir build && cd build
 cmake ..
-make
+cmake --build .
 ```
 
 ### Usage
@@ -69,34 +69,35 @@ mem.deref<T>();
 
 ## Platform Support
 
-| Feature | Windows | Linux | UEFI (TODO) |
-|---------|---------|-------|------|
-| Internal Backend | ✅ | ✅ | — |
-| External Backend | ✅ | ✅ | — |
-| eBPF Backend | — | ✅ | — |
-| UEFI Backend (TODO) | — | — | ✅ |
-| Pattern Scanner | ✅ | ✅ | — |
-| Module Enumeration | ✅ | ✅ | — |
+| Feature | Windows | macOS | GNU/Linux | UEFI (experimental) |
+|---------|---------|-------|-----------|---------------------|
+| Internal Backend | ✅ | ✅ | ✅ | — |
+| External Backend | ✅ | ✅ | ✅ | — |
+| eBPF Backend | — | — | ✅ | — |
+| UEFI Driver | — | — | — | X64 / AARCH64 |
+| Pattern Scanner | ✅ | ✅ | ✅ | — |
+| Module Enumeration | ✅ | ✅ | ✅ | — |
+
+Native `arm64`/`aarch64` and `x86_64` builds are supported.
 
 ## Build Options
 
 | Option | Default | Description |
 |---------|---------|-------------|
-| BUILD_EBPF_BACKEND | ON | Build eBPF backend |
-| BUILD_UEFI_DRIVER | ON | Build UEFI driver |
+| BUILD_EBPF_BACKEND | OFF | Build the Linux eBPF backend |
+| BUILD_UEFI_DRIVER | OFF | Build the experimental UEFI driver |
 | BUILD_EXAMPLES | ON | Build example programs |
 
 ```bash
-cmake -DBUILD_EBPF_BACKEND=OFF ..
-cmake -DBUILD_UEFI_DRIVER=OFF ..
+cmake -DBUILD_EBPF_BACKEND=ON ..
+cmake -DBUILD_UEFI_DRIVER=ON ..
 cmake -DBUILD_EXAMPLES=OFF ..
 ```
 
 ## Warning
 
-UEFI currently is not supported! If U wanna help and add UEFI support, U'r welcome!
-
-Also U can create pool request for that! (And for CMake version downgrade... (Visual Studio moment...))
+macOS cross-process access may require the `task_for_pid` entitlement. UEFI
+support is experimental.
 
 ## License
 

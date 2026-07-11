@@ -16,4 +16,12 @@ namespace memlib {
     using ExternalBackend = ExternalLinuxBackend;
 }
 
+#elif defined(__APPLE__)
+
+#include "external_backend_macos.hpp"
+
+namespace memlib {
+    using ExternalBackend = ExternalMacOSBackend;
+}
+
 #endif

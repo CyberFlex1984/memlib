@@ -1,4 +1,4 @@
-#if defined(__linux__)
+#if defined(__linux__) && defined(MEMLIB_EBPF)
 
 
 #include "backend/scan_utils.hpp"
@@ -13,6 +13,7 @@
 
 #include "external_backend_linux.hpp"
 
+#include <algorithm>
 #include <unistd.h>
 #include <cstring>
 #include <chrono>
@@ -34,8 +35,11 @@ namespace memlib {
     }
 
     Result<std::unique_ptr<EBPFBackend>> EBPFBackend::create(const std::string& name) {
-        auto pid = TRY(find_pid_by_name(name));
-        return EBPFBackend::create(pid);
+        auto pid = find_pid_by_name(name);
+        if (!pid) {
+            return std::unexpected(pid.error());
+        }
+        return EBPFBackend::create(pid.value());
     }
 
     Result<std::unique_ptr<EBPFBackend>> EBPFBackend::create(memlib::u32 pid) {
@@ -60,8 +64,8 @@ namespace memlib {
         }
 
 
-        struct bpf_map* args;
-        struct bpf_map* write_data;
+        struct bpf_map* args = nullptr;
+        struct bpf_map* write_data = nullptr;
 
         struct bpf_map* map;
         bpf_object__for_each_map(map, obj) {
@@ -108,7 +112,7 @@ namespace memlib {
         backend->pid = pid;
         backend->attached = true;
 
-        return std::move(backend);
+        return backend;
     }
     EBPFBackend::~EBPFBackend() {
         if(link) bpf_link__destroy(link);
@@ -160,7 +164,8 @@ namespace memlib {
 
             ret = ring_buffer__poll(rb, 10);
             if(ret < 0){
-                std::unexpected(Error(ErrorCode::BackendError, "ring_buffer__poll failed"));
+                return std::unexpected(Error(ErrorCode::BackendError,
+                    "ring_buffer__poll failed"));
             }
         }
 
@@ -173,7 +178,10 @@ namespace memlib {
         }
 
         unsigned char old_data[256];
-        TRY(read_chunk(addr, old_data, 256));
+        auto read_result = read_chunk(addr, old_data, 256);
+        if (!read_result) {
+            return std::unexpected(read_result.error());
+        }
 
         memcpy(old_data, buffer, size); // because we need to fix less bytes and don't corrupt memory
 
@@ -236,7 +244,10 @@ namespace memlib {
             size_t chunk_size = std::min<size_t>(256, size - offset);
             address_t chunk_addr = addr + offset;
 
-            TRY(read_chunk(chunk_addr, dst + offset, chunk_size));
+            auto read_result = read_chunk(chunk_addr, dst + offset, chunk_size);
+            if (!read_result) {
+                return std::unexpected(read_result.error());
+            }
 
             offset += chunk_size;
         }
@@ -257,10 +268,13 @@ namespace memlib {
         uint8_t* src = (uint8_t*)buffer;
 
         while(offset < size){
-            size_t chunk_size = std::min<int>(256, size - offset);
+            size_t chunk_size = std::min<size_t>(256, size - offset);
             address_t chunk_addr = addr + offset;
 
-            TRY(write_chunk(chunk_addr, src + offset, chunk_size));
+            auto write_result = write_chunk(chunk_addr, src + offset, chunk_size);
+            if (!write_result) {
+                return std::unexpected(write_result.error());
+            }
 
             offset += chunk_size;
         }
@@ -275,12 +289,18 @@ namespace memlib {
         return scan_region(*this, pattern, start, end);
     }
     Result<std::vector<ModuleInfo>> EBPFBackend::get_modules() {
-        auto pImpl = TRY(ExternalLinuxBackend::create(pid));
-        return pImpl->get_modules();
+        auto backend = ExternalLinuxBackend::create(pid);
+        if (!backend) {
+            return std::unexpected(backend.error());
+        }
+        return backend.value()->get_modules();
     }
     Result<ModuleInfo> EBPFBackend::get_module(const std::string& name) {
-        auto pImpl = TRY(ExternalLinuxBackend::create(pid));
-        return pImpl->get_module(name);
+        auto backend = ExternalLinuxBackend::create(pid);
+        if (!backend) {
+            return std::unexpected(backend.error());
+        }
+        return backend.value()->get_module(name);
     }
 }
 
