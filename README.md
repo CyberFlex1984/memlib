@@ -79,6 +79,7 @@ mem.deref<T>();
 | Module Enumeration | ✅ | ✅ | ✅ | — |
 
 Native `arm64`/`aarch64` and `x86_64` builds are supported.
+AARCH64 UEFI builds are verified on macOS with EDK2, LLVM, and LLD.
 
 ## Build Options
 
