@@ -17,7 +17,7 @@ Additional features:
 * Module Enumeration — get loaded modules (Windows/macOS/GNU/Linux)
 * Address Arithmetic — pointer dereferencing, offsets, array access
 * Zero-cost Abstractions — modern C++ with std::expected
-* Cross-platform — Windows, macOS, GNU/Linux, and experimental UEFI
+* Cross-platform — Windows, macOS, GNU/Linux
 * No exceptions — all errors via Result<T>
 * Header-only Optional — easy integration
 
@@ -78,16 +78,14 @@ mem.deref<T>();
 | Pattern Scanner | ✅ | ✅ | ✅ | — |
 | Module Enumeration | ✅ | ✅ | ✅ | — |
 
-Both `arm64`/`aarch64` and `x86_64` native builds are supported on macOS and
-GNU/Linux. The Linux eBPF build maps the target processor to libbpf's target
-architecture macros instead of assuming x86-64.
+Native `arm64`/`aarch64` and `x86_64` builds are supported.
 
 ## Build Options
 
 | Option | Default | Description |
 |---------|---------|-------------|
-| BUILD_EBPF_BACKEND | OFF | Build the GNU/Linux-only eBPF backend (requires libbpf and clang) |
-| BUILD_UEFI_DRIVER | OFF | Build the experimental UEFI driver (may download EDK2) |
+| BUILD_EBPF_BACKEND | OFF | Build the Linux eBPF backend |
+| BUILD_UEFI_DRIVER | OFF | Build the experimental UEFI driver |
 | BUILD_EXAMPLES | ON | Build example programs |
 
 ```bash
@@ -98,11 +96,8 @@ cmake -DBUILD_EXAMPLES=OFF ..
 
 ## Warning
 
-Cross-process access is subject to each operating system's normal permissions.
-On macOS, access to other processes may require an appropriately signed binary
-and the task-for-pid entitlement. UEFI support is experimental; AARCH64 builds
-on macOS require a complete LLVM installation containing clang, lld-link,
-llvm-lib, and llvm-rc.
+macOS cross-process access may require the `task_for_pid` entitlement. UEFI
+support is experimental.
 
 ## License
 
