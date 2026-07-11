@@ -9,7 +9,7 @@ memlib is a cross-platform C++23 library for reading, writing, and scanning proc
 | Internal | Windows / macOS / GNU/Linux | Direct memory access from within the current process |
 | External | Windows / macOS / GNU/Linux | Cross-process memory access via OS API |
 | eBPF | GNU/Linux | Kernel-level memory access without kernel modules (Linux 5.8+) |
-| UEFI (experimental) | X64 / AARCH64 | Runtime driver with memory access via firmware |
+| UEFI (TODO) | X64 / AARCH64 | Runtime driver with memory access via firmware |
 
 Additional features:
 
@@ -69,17 +69,17 @@ mem.deref<T>();
 
 ## Platform Support
 
-| Feature | Windows | macOS | GNU/Linux | UEFI (experimental) |
+| Feature | Windows | macOS | GNU/Linux | UEFI (TODO) |
 |---------|---------|-------|-----------|---------------------|
 | Internal Backend | ✅ | ✅ | ✅ | — |
 | External Backend | ✅ | ✅ | ✅ | — |
 | eBPF Backend | — | — | ✅ | — |
-| UEFI Driver | — | — | — | X64 / AARCH64 |
+| UEFI Driver (TODO) | — | — | — | X64 / AARCH64 |
 | Pattern Scanner | ✅ | ✅ | ✅ | — |
 | Module Enumeration | ✅ | ✅ | ✅ | — |
 
 Native `arm64`/`aarch64` and `x86_64` builds are supported.
-AARCH64 UEFI builds are verified on macOS with EDK2, LLVM, and LLD.
+AARCH64 UEFI (TODO) builds are verified on macOS with EDK2, LLVM, and LLD.
 
 ## Build Options
 
@@ -97,8 +97,14 @@ cmake -DBUILD_EXAMPLES=OFF ..
 
 ## Warning
 
-macOS cross-process access may require the `task_for_pid` entitlement. UEFI
-support is experimental.
+macOS cross-process access may require the `task_for_pid` entitlement.
+
+## TODO
+Full UEFI support. Memory reading and writing via EfiSetVariable hook.
+
+Also add kernel mode for Windows (using .sys driver with custom user preload (like kdmapper) or loading via bootkit).
+
+Also add DMA method (I don't have DMA card to do that).
 
 ## License
 
