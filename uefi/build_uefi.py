@@ -5,6 +5,7 @@ import shutil
 import argparse
 import platform
 import shlex
+import tempfile
 from pathlib import Path
 
 def detect_os():
@@ -30,6 +31,8 @@ def detect_arch():
 
 def build_environment(os_name, toolchain, arch):
     env = os.environ.copy()
+    for variable in ('MAKEFLAGS', 'MFLAGS', 'MAKELEVEL'):
+        env.pop(variable, None)
 
     if toolchain == 'CLANGPDB':
         required_tools = ('clang', 'lld-link', 'llvm-lib', 'llvm-rc')
@@ -41,11 +44,14 @@ def build_environment(os_name, toolchain, arch):
                 f'missing: {", ".join(missing)}'
             )
         tool_dirs = {str(Path(path).resolve().parent) for path in tool_paths.values()}
-        if len(tool_dirs) != 1:
-            raise RuntimeError(
-                'clang, lld-link, llvm-lib, and llvm-rc must come from the same LLVM installation'
-            )
-        env['CLANG_BIN'] = tool_dirs.pop() + os.sep
+        if len(tool_dirs) == 1:
+            env['CLANG_BIN'] = tool_dirs.pop() + os.sep
+        else:
+            shim_dir = Path(tempfile.mkdtemp(prefix='memlib-llvm-'))
+            for tool, path in tool_paths.items():
+                (shim_dir / tool).symlink_to(Path(path).resolve())
+            env['CLANG_BIN'] = str(shim_dir) + os.sep
+            env['MEMLIB_LLVM_SHIM_DIR'] = str(shim_dir)
 
     if os_name == 'linux' and toolchain == 'GCC5':
         prefix_variable = f'GCC5_{arch}_PREFIX'
@@ -58,6 +64,7 @@ def build_uefi_driver(edk2_path, project_path, output_dir):
     arch = detect_arch()
     toolchain = detect_toolchain(arch)
     env = build_environment(os_name, toolchain, arch)
+    shim_dir = env.pop('MEMLIB_LLVM_SHIM_DIR', None)
 
     print(f"OS: {os_name}")
     print(f"Toolchain: {toolchain}")
@@ -77,6 +84,13 @@ def build_uefi_driver(edk2_path, project_path, output_dir):
 
     try:
         if os_name == 'linux' or os_name == 'darwin':
+            genfw = edk2_path / 'BaseTools' / 'Source' / 'C' / 'bin' / 'GenFw'
+            if not genfw.exists():
+                subprocess.run(
+                    ['make', '-C', str(edk2_path / 'BaseTools')],
+                    check=True,
+                    env=env
+                )
             shell_cmd = f"""
 cd {shlex.quote(str(edk2_path))}
 source edksetup.sh
@@ -109,6 +123,8 @@ build -a {arch} -t {toolchain} -p MemlibPkg/MemlibPkg.dsc -m MemlibPkg/MemlibDxe
     finally:
         if uefi_dst.exists():
             shutil.rmtree(uefi_dst)
+        if shim_dir is not None:
+            shutil.rmtree(shim_dir)
 
 def main():
     parser = argparse.ArgumentParser()
